@@ -16,47 +16,18 @@ arquivos.forEach(arquivo => {
     const inputLegenda = `${arquivo}.ass`;
     const outputVideo = `${arquivo}-Legendado.mkv`;
 
-    // Comando FFmpeg para queimar a legenda
+   // Comando FFmpeg para queimar a legenda e adicionar logo ao mesmo tempo
     ffmpeg(inputVideo)
-        .outputOptions([
-            '-vf', `subtitles=${escapePath(inputLegenda)}`,
-            '-c:a', 'copy' // copia o áudio sem reprocessar
-        ])
-        .videoCodec('libx264')
-        .outputOptions('-crf', '16')
-        .on('start', (commandLine) => {
-            console.log('FFmpeg iniciado com o comando: ' + commandLine);
-        })
-        .on('progress', (progress) => {
-            if (progress.percent !== undefined) {
-                console.log(`Processando: ${progress.percent.toFixed(2)}%`);
-            } else {
-                console.log(`Processando: time ${progress.timemark}`);
-            }
-        })
-        .on('end', () => {
-            console.log('Conversão finalizada com sucesso!');
-            addWatermark(arquivo);
-        })
-        .on('error', (err) => {
-            console.error('Erro ao processar o vídeo:', err.message);
-        })
-        .save(outputVideo);
-});
-
-function escapePath(path) {
-    // Escapa espaços e caracteres especiais para o FFmpeg
-    return `'${path.replace(/'/g, "'\\''")}'`;
-}
-
-function addWatermark(arquivo) {
-    const inputVideo2 = `${arquivo}-Legendado.mkv`;
-    const overlayImage2 = 'Logo.png';
-    const outputVideo2 = `${arquivo} Legendado.mkv`;
-    
-    const command = ffmpeg(inputVideo2)
-        .input(overlayImage2)
+        .input(overlayImage)
         .complexFilter([
+            // Queima legenda
+            {
+                filter: 'subtitles',
+                options: inputLegenda,
+                inputs: '[0:v]',
+                outputs: 'legended'
+            },
+            // Redimensiona logo
             {
                 filter: 'scale',
                 options: {
@@ -66,13 +37,14 @@ function addWatermark(arquivo) {
                 inputs: '[1:v]',
                 outputs: 'logo'
             },
+            // Sobrepõe logo na imagem legendada
             {
                 filter: 'overlay',
                 options: {  
                     x: 50,
                     y: 'main_h-overlay_h-30'
                 },
-                inputs: ['[0:v]', 'logo']
+                inputs: ['legended', 'logo']
             }
         ])
         .videoCodec('libx264')
@@ -88,10 +60,22 @@ function addWatermark(arquivo) {
         })
         .on('end', () => {
             console.log('\n✅ Processamento concluído!');
-            console.log(`Arquivo salvo como: ${outputVideo2}`);
+            console.log(`Arquivo salvo como: ${outputVideo}`);
+            if (typeof window !== 'undefined' && window.finishProgressBar) {
+                window.finishProgressBar(true, 'Processamento concluído com sucesso!');
+            }
         })
         .on('error', (err) => {
             console.error('\n❌ Erro no processamento:', err.message);
+            if (typeof window !== 'undefined' && window.finishProgressBar) {
+                window.finishProgressBar(false, 'Ocorreu um erro: ' + err.message);
+            }
         })
-        .save(outputVideo2);
+        .save(outputVideo);
+});
+
+function escapePath(path) {
+    // Escapa espaços e caracteres especiais para o FFmpeg
+    return `'${path.replace(/'/g, "'\\''")}'`;
 }
+
