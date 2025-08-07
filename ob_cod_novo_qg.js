@@ -1,27 +1,37 @@
 const fs = require('node:fs').promises
 const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg'); 
 
 document.addEventListener('DOMContentLoaded',()=>{
     const input = document.getElementById('legenda_para_filtrar')
     const nova_legenda = document.getElementById('legenda_digitada')
     const botao = document.getElementById('executar')
     const video = document.getElementById('video')
+   
  botao.addEventListener('click', async () => {
   
-    const dados_finais = await Filtro_dados(input.value, nova_legenda.value, video.value);
-   dados_finais.forEach(linha =>{
-    console.log(linha)
-   })
+   // const dados_finais = await Filtro_dados(input.value, nova_legenda.value);
+  // dados_finais.forEach(linha =>{
+  //  console.log(linha)
+ //  })
 
-    const tudoComoTexto = dados_finais.join('\n');
-   await fs.writeFile('saida.ass', tudoComoTexto, 'utf8');
+   // const tudoComoTexto = dados_finais.join('\n');
+    //await fs.writeFile(video.value+"novo.ass", tudoComoTexto, 'utf8');
+    //await sleep(3000);
+    
+   
+    console.log(video.value)
+   //videoAdd([video.value])
 
 
 
 });
 })
 
-
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 async function Filtro_dados(arquivo,legenda){
@@ -182,48 +192,99 @@ try{
   return logs
     
 } 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        // time_filtro = filtrar2[i+5].split('\\') //separando em array '\\N'
-          // time_filtro[1] = time_filtro[1].split('}')
-          // time_filtro[1][0] = time_filtro[1][0].replace('1615','140') //substituindo valor 
-          // time_filtro[1][0] = time_filtro[1][0].replace('1075','100') //substituindo valor 
-          // time_filtro[4] = time_filtro[4].replace('N','')
 
-    //Data
-           //data_filtro1 = filtrar2[i+6].split('\\') //separando em array '\\N'
-          // data_filtro1[1] = data_filtro1[1].split('}')
-          // data_filtro1[1][0] = data_filtro1[1][0].replace('10','140') //substituindo valor 
-          // data_filtro1[1][0] = data_filtro1[1][0].replace('35','60') //substituindo valor 
-           
-           
-        //Heading             
-       // limpando_valor = filtrar2[i+1].split('}')
-      //  posicao_valor = limpando_valor[1].split('\\')
-       // inicio = limpando_valor[0].split('\\')
-       // inicio[1] = inicio[1].replace('305','1760')
-       //inicio[1] = inicio[1].replace('1075','100')
+
+
+ async function videoAdd(arquivos){
+    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+
+
+// Processa cada arquivo individualmente
+arquivos.forEach(arquivo => {
+    // Arquivos de entrada e saída
+    const inputVideo = `${arquivo}.mkv`;
+    const inputLegenda = `${arquivo}novo.ass`;
+    const overlayImage = 'Logo.png'
+    const outputVideo = `${arquivo}-Legendado.mkv`;
+
+   // Comando FFmpeg para queimar a legenda e adicionar logo ao mesmo tempo
+    ffmpeg(inputVideo)
+        .input(overlayImage)
+        .complexFilter([
+            // Queima legenda
+            {
+                filter: 'subtitles',
+                options: inputLegenda,
+                inputs: '[0:v]',
+                outputs: 'legended'
+            },
+            // Redimensiona logo
+            {
+                filter: 'scale',
+                options: {
+                    w: 225,
+                    h: 113
+                },
+                inputs: '[1:v]',
+                outputs: 'logo'
+            },
+            // Sobrepõe logo na imagem legendada
+            {
+                filter: 'overlay',
+                options: {  
+                    x: 50,
+                    y: 'main_h-overlay_h-30'
+                },
+                inputs: ['legended', 'logo']
+            }
+        ])
+        .videoCodec('libx264')
+        .outputOptions('-crf', '16')
+        .on('start', (commandLine) => {
+            console.log(`Comando executado: ${commandLine}`);
+            console.log('Iniciando processamento...');
+        })
+        .on('progress', (progress) => {
+            const percent = Math.round(progress.percent) || 0;
+            const time = progress.timemark || '00:00:00';
+            console.log(`Progresso: ${percent}% | Tempo: ${time} | Quadros: ${progress.frames}`);
+        })
+        .on('end', () => {
+            console.log('\n✅ Processamento concluído!');
+            console.log(`Arquivo salvo como: ${outputVideo}`);
+            if (typeof window !== 'undefined' && window.finishProgressBar) {
+                window.finishProgressBar(true, 'Processamento concluído com sucesso!');
+            }
+        })
+        .on('error', (err) => {
+            console.error('\n❌ Erro no processamento:', err.message);
+            if (typeof window !== 'undefined' && window.finishProgressBar) {
+                window.finishProgressBar(false, 'Ocorreu um erro: ' + err.message);
+            }
+        })
+        .save(outputVideo);
+});
+
+function escapePath(path) {
+    // Escapa espaços e caracteres especiais para o FFmpeg
+    return `'${path.replace(/'/g, "'\\''")}'`;
+}
+
+
+}
     
-        
-           
-        //console.log(inicio[0]+'\\'+inicio[1]+'}'+posicao_valor[posicao_Heading].replace('N','').replace(' deg','°'))
-        //console.log(time_filtro[0]+"\\"+time_filtro[1][0]+"}"+time_filtro[4])
-        //console.log(data_filtro1[0]+"\\"+data_filtro1[1][0]+"}"+data_filtro1[1][1])
-         
-        
-   
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   
 
    
@@ -253,63 +314,6 @@ try{
 
 
 
-/*
-   
-   //filtrar[11] = estilo1
-   //filtrar.splice(11,0,estilo2)  //inserindo dado no meio do array 
-   //filtrar.splice(16,0,legenda,localizacao,tempo)  //inserindo dado no meio do array
-
-   for(let i = 0; i < 19; i++){
-    //console.log(filtrar[i])
-   }
-
-
-   for(let i = 0; i < filtrar.length; i++)
-       if(filtrar[i].includes('Depth')){
-           linha_heading = filtrar[i].split('\\') //separando em array o '\' 
-           v_heading = filtrar[i+1].split('\\')    //separando em array o '\'
-            
-           //Time
-           time_filtro = filtrar[i+1].split('\\') //separando em array '\\N'
-           time_filtro[1] = time_filtro[1].split('}')
-           time_filtro[1][0] = time_filtro[1][0].replace('305','140') //substituindo valor 
-           time_filtro[1][0] = time_filtro[1][0].replace('1075','60') //substituindo valor 
-           
-           //Data
-           data_filtro1 = filtrar[i+6].split('\\')
-           data_filtro1[1] = data_filtro1[1].split('}')
-           data_filtro1[1][0] = data_filtro1[1][0].replace('10','140')
-           data_filtro1[1][0] = data_filtro1[1][0].replace('35','60')
-           
-
-           data_final = data_filtro1[0]+'\\'+data_filtro1[1][0]+'}'+data_filtro1[1][1]
-           
-           // Heading e Depth
-           
-           v_heading_sem_deg = v_heading[1].replace(' deg','°') // substituindo 'deg' por '°'
-           limpando_pos = v_heading[1].split('}')  //separando por '}'
-           pos_limpo = limpando_pos[0]+'}' //removendo '}'
-           //depth_sem_N = v_heading[4].replace('N','') //removendo o N
-           pos_real = pos_limpo.replace('305','1760') //substituindo valor 
-           pos_final = pos_real.replace('1075','100') //substituindo valor
-           v_heading[1] = pos_final //setando valor no array correto
-           //v_heading[4] = depth_sem_N //setando valor no array correto
-           v_heading[5] = v_heading_sem_deg //setando valor no array correto
-           //console.log(limpando_pos)
-           
-           linha_final_heading_e_depth = v_heading[0]+'\\'+v_heading[5]
-           linha_final_time = time_filtro[0]+'\\'+time_filtro[1][0]+'}'+'\\'+time_filtro[2]
-
-           
-          
-          //console.log(linha_final_heading_e_depth) //valor final do heading e depth
-          //console.log(linha_final_time)
-          //console.log(data_final)
-           
-    
-
-}
-*/
 
 
 
