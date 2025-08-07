@@ -16,7 +16,7 @@
       }
 
       h1 {
-        color: #1B5C74;
+        color: #839196;
         font-weight: 700;
         font-size: 28px;
         text-transform: uppercase;
@@ -81,10 +81,13 @@
       button:hover {
         background-color: #218838;
       }
+      
+      
 
     </style>
   </head>
   <body>
+    <div class="background-container"></div>
     <h1>Configuração de Vídeo BRS</h1>
 
     <div class="form-container">
@@ -108,11 +111,96 @@
         <label for="logo">Endereço Logo:</label>
         <input type="text" id="logo" name="logo" placeholder="Ex: C:/imagens/minhalogo.png">
       </div>
+     
     </div>
 
-    <button  id="executar">Executar</button>
+    <div class="action-container">
+      <button id="executar">Executar</button>
+      <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+        <span id="progress-bar-text">Processando...</span>
+      </div>
+      <div id="status-message" style="display:none; margin-top:10px; font-weight:bold; font-size:16px; text-align:center;"></div>
+    <!-- Mensagem de comparação removida -->
+    </div>
 
   </body>
-  <script src="ob_cod_novo_qg.js" ></script>
+  <script src="progressbar.js"></script>
+  <style>
+    .background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .background-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('C:/Users/User/OneDrive/Pictures/Wallpaper (1).png') no-repeat center center fixed;
+      background-size: cover;
+      filter: brightness(0.4) blur(1px);
+      z-index: 0;
+    }
+    body, .form-container, h1, button {
+      position: relative;
+      z-index: 1;
+    }
+    .action-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 400px;
+      margin: 30px auto 0 auto;
+      gap: 10px;
+    }
+    #executar {
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+      margin-bottom: 0;
+    }
+    #progress-bar-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 18px 10px 10px 10px;
+      position: relative;
+      z-index: 2;
+    }
+    #progress-bar {
+      height: 18px;
+      width: 0%;
+      background: linear-gradient(90deg, #28a745 60%, #218838 100%);
+      border-radius: 8px;
+      transition: width 0.3s;
+      box-shadow: 0 1px 4px rgba(40,167,69,0.15);
+    }
+    #progress-bar-text {
+      margin-top: 8px;
+      color: #1B5C74;
+      font-weight: bold;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-align: center;
+      display: block;
+    }
+  </style>
+</script>
+  <script src="ob_cod_novo_qg.js"></script>
+</script>
 </html>
-
